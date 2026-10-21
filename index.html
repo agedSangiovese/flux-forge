@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flux Forge — Procedural Art Editor</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◈</text></svg>" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- ===================== TOP TOOLBAR ===================== -->
+      <header id="toolbar" class="toolbar">
+        <div class="toolbar-group brand">
+          <span class="logo">&gt;_</span>
+          <span class="brand-name">Flux<b>Forge</b></span>
+        </div>
+
+        <div class="toolbar-sep"></div>
+
+        <div class="toolbar-group">
+          <button class="tb-btn" id="btn-add-node" title="Add node (Tab or Ctrl+K)">
+            <span class="tb-key">[Tab]</span><span class="tb-label">Add</span>
+          </button>
+          <button class="tb-btn" id="btn-undo" title="Undo (Ctrl+Z)" disabled>
+            <span class="tb-key">[^Z]</span>
+          </button>
+          <button class="tb-btn" id="btn-redo" title="Redo (Ctrl+Shift+Z)" disabled>
+            <span class="tb-key">[^Y]</span>
+          </button>
+        </div>
+
+        <div class="toolbar-sep"></div>
+
+        <div class="toolbar-group">
+          <button class="tb-btn" id="btn-frame" title="Frame all nodes (F)">
+            <span class="tb-key">[F]</span><span class="tb-label">Frame</span>
+          </button>
+          <button class="tb-btn" id="btn-bypass" title="Bypass selected node (B)">
+            <span class="tb-key">[B]</span><span class="tb-label">Bypass</span>
+          </button>
+          <button class="tb-btn" id="btn-group" title="Group selection (Ctrl+G)">
+            <span class="tb-key">[^G]</span><span class="tb-label">Group</span>
+          </button>
+        </div>
+
+        <div class="toolbar-sep"></div>
+
+        <div class="toolbar-group grow">
+          <button class="tb-btn wide" id="btn-presets" title="Load a starter artwork (P)">
+            <span class="tb-key">[P]</span><span class="tb-label">Presets</span>
+          </button>
+          <button class="tb-btn wide" id="btn-save" title="Download graph as JSON (Ctrl+S)">
+            <span class="tb-key">[^S]</span><span class="tb-label">Save</span>
+          </button>
+          <button class="tb-btn wide" id="btn-load" title="Load graph from JSON">
+            <span class="tb-label">Load</span>
+          </button>
+        </div>
+
+        <div class="toolbar-sep"></div>
+
+        <div class="toolbar-group">
+          <div class="tb-split">
+            <button class="tb-btn" id="btn-export-png" title="Export PNG (Ctrl+E)">
+              <span class="tb-key">[^E]</span><span class="tb-label">PNG</span>
+            </button>
+            <button class="tb-btn caret" id="btn-export-menu" title="More export options">v</button>
+          </div>
+          <button class="tb-btn" id="btn-help" title="Keyboard shortcuts (H)">?</button>
+          <button class="tb-btn" id="btn-theme" title="Toggle theme">◐</button>
+        </div>
+      </header>
+
+      <!-- ===================== MAIN LAYOUT ===================== -->
+      <div id="main" class="main">
+        <!-- ---------- LEFT: NODE PALETTE ---------- -->
+        <aside id="palette" class="palette">
+          <div class="palette-search">
+            <input id="palette-input" type="text" placeholder="Search nodes…" autocomplete="off" spellcheck="false" />
+          </div>
+          <div id="palette-list" class="palette-list"><!-- populated by JS --></div>
+        </aside>
+
+        <!-- ---------- CENTER: GRAPH EDITOR ---------- -->
+        <section id="graph-pane" class="graph-pane">
+          <div id="viewport" class="viewport">
+            <svg id="wire-layer" class="wire-layer"></svg>
+            <div id="world" class="world"><!-- nodes injected here --></div>
+
+            <div id="empty-state" class="empty-state">
+              <div class="empty-inner">
+                <div class="empty-ico">◈</div>
+                <h2>start building</h2>
+                <p>
+                  Drag a node from the left, press <kbd>Tab</kbd> to search, or pick a
+                  <b>Presets</b> idea from the toolbar.
+                </p>
+                <div class="empty-actions">
+                  <button class="btn primary" id="empty-preset">[P] Browse presets</button>
+                  <button class="btn" id="empty-add">[Tab] Add a node</button>
+                </div>
+                <ul class="empty-tips">
+                  <li><b>Scroll</b> to zoom · <b>Drag background</b> to pan</li>
+                  <li><b>Drag</b> from a dot to wire nodes together</li>
+                  <li><b>Right-click</b> for the node menu</li>
+                </ul>
+              </div>
+            </div>
+
+            <div id="minimap" class="minimap">
+              <canvas id="minimap-canvas" width="200" height="130"></canvas>
+              <div class="minimap-label">[overview]</div>
+            </div>
+
+            <div id="marquee" class="marquee hidden"></div>
+          </div>
+
+          <footer id="statusbar" class="statusbar">
+            <span id="status-left">ready</span>
+            <span class="status-spacer"></span>
+            <span id="status-nodes">0 nodes</span>
+            <span id="status-zoom">100%</span>
+            <span id="status-fps">– fps</span>
+          </footer>
+        </section>
+
+        <!-- ---------- RESIZER ---------- -->
+        <div id="splitter" class="splitter" title="Drag to resize"></div>
+
+        <!-- ---------- RIGHT: PREVIEW + INSPECTOR ---------- -->
+        <aside id="side" class="side">
+          <div id="preview" class="preview">
+            <div class="panel-head">
+              <span class="panel-title">[preview]</span>
+              <span class="panel-actions">
+                <button class="mini-btn" id="btn-reset-cam" title="Reset camera">⟳</button>
+                <button class="mini-btn" id="btn-anim" title="Pause / play time animation">||</button>
+                <button class="mini-btn" id="btn-fullscreen" title="Fullscreen preview">⛶</button>
+              </span>
+            </div>
+            <div id="preview-host" class="preview-host">
+              <canvas id="preview-canvas"></canvas>
+              <div id="preview-overlay" class="preview-overlay"></div>
+            </div>
+            <div class="preview-foot">
+              <span id="preview-tris">0 tris</span>
+              <span class="status-spacer"></span>
+              <span id="preview-msg"></span>
+            </div>
+          </div>
+
+          <div class="splitter-h" id="splitter-h" title="Drag to resize"></div>
+
+          <div id="inspector" class="inspector">
+            <div class="panel-head">
+              <span class="panel-title">[inspector]</span>
+              <span class="panel-actions">
+                <button class="mini-btn" id="btn-delete-node" title="Delete selected (Del)">⌫</button>
+              </span>
+            </div>
+            <div id="inspector-body" class="inspector-body">
+              <div class="inspector-empty">Select a node to edit its settings.</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ===================== OVERLAYS ===================== -->
+    <div id="palette-modal" class="modal hidden">
+      <div class="modal-card node-search">
+        <input id="node-search-input" type="text" placeholder="Type to search nodes…  ↑↓ to navigate, Enter to add"
+               autocomplete="off" spellcheck="false" />
+        <div id="node-search-results" class="node-search-results"></div>
+        <div class="modal-hint">
+          <span><kbd>Enter</kbd> add</span>
+          <span><kbd>Esc</kbd> close</span>
+          <span><kbd>↑↓</kbd> navigate</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="presets-modal" class="modal hidden">
+      <div class="modal-card presets-card">
+        <div class="modal-head">
+          <h3>preset gallery</h3>
+          <button class="mini-btn" data-close>✕</button>
+        </div>
+        <div id="presets-grid" class="presets-grid"></div>
+        <div class="modal-hint">Loading a preset replaces the current graph. <kbd>Esc</kbd> to close.</div>
+      </div>
+    </div>
+
+    <div id="help-modal" class="modal hidden">
+      <div class="modal-card help-card">
+        <div class="modal-head">
+          <h3>shortcuts &amp; tips</h3>
+          <button class="mini-btn" data-close>✕</button>
+        </div>
+        <div id="help-body" class="help-body"></div>
+      </div>
+    </div>
+
+    <div id="export-menu" class="menu hidden"></div>
+    <div id="ctx-menu" class="menu hidden"></div>
+
+    <div id="toast-stack" class="toast-stack"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

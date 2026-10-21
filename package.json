@@ -1,0 +1,19 @@
+{
+  "name": "flux-forge",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A node-based procedural art editor and renderer built on three.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "three": "^0.179.1"
+  },
+  "devDependencies": {
+    "vite": "^7.1.3"
+  }
+}
